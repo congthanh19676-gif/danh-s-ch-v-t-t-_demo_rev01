@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống quản lý, đề xuất vật tư cho dự án - VAS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .a4-preview-sheet {
+            font-family: 'Times New Roman', Times, serif;
+            color: #000;
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            min-width: 750px;
+        }
+        .note-input {
+            width: 100%;
+            min-width: 150px;
+            padding: 4px 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .note-input:focus {
+            border-color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-3">
+                    
+                    <div class="h-10 flex items-center justify-center">
+                        <img src="./images/VAS.png" alt="Logo VAS" class="h-full w-auto object-contain">
+                    </div>
+
+                    <div>
+                        <span class="font-bold text-lg block tracking-wide text-slate-800">CÔNG TY TNHH KỸ THUẬT NĂNG LƯỢNG VAS</span>
+                        <span class="text-xs text-slate-500 block -mt-1">Nền Tảng Quản Lý Yêu Cầu Vật Tư Công Trường</span>
+                    </div>
+                </div>
+                <nav class="flex space-x-1 sm:space-x-2">
+                    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white shadow">
+                        <i class="fa-solid fa-chart-pie mr-1.5"></i>Tổng Quan Thống Kê
+                    </button>
+                    <button onclick="switchTab('danhmuc')" id="tab-danhmuc" class="tab-btn px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 text-slate-600 hover:bg-slate-100 hover:text-blue-600">
+                        <i class="fa-solid fa-boxes-stacked mr-1.5"></i>Danh Mục Gốc & Yêu Cầu
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div id="toast-container" class="fixed bottom-5 right-5 z-50 space-y-2"></div>
+
+        <section id="page-dashboard" class="tab-content block space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tổng chủng loại</p>
+                        <h3 class="text-2xl font-bold text-slate-800 mt-1" id="stat-total-items">0</h3>
+                        <span class="text-xs text-emerald-500 font-medium"><i class="fa-solid fa-check mr-1"></i>Sẵn sàng cấp phát</span>
+                    </div>
+                    <div class="p-4 bg-blue-50 text-blue-600 rounded-2xl"><i class="fa-solid fa-tags text-2xl"></i></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Hệ thống kỹ thuật</p>
+                        <h3 class="text-2xl font-bold text-slate-800 mt-1" id="stat-total-categories">0</h3>
+                        <span class="text-xs text-blue-500 font-medium">Phân chia khoa học</span>
+                    </div>
+                    <div class="p-4 bg-emerald-50 text-emerald-600 rounded-2xl"><i class="fa-solid fa-folder-tree text-2xl"></i></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Thương hiệu & Đối tác</p>
+                        <h3 class="text-2xl font-bold text-slate-800 mt-1" id="stat-total-brands">0</h3>
+                        <span class="text-xs text-indigo-500 font-medium">Hòa Phát, Cadivi...</span>
+                    </div>
+                    <div class="p-4 bg-indigo-50 text-indigo-600 rounded-2xl"><i class="fa-solid fa-handshake text-2xl"></i></div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Vật tư có ghi chú</p>
+                        <h3 class="text-2xl font-bold text-slate-800 mt-1" id="stat-has-notes">0</h3>
+                        <span class="text-xs text-amber-500 font-medium"><i class="fa-solid fa-circle-info mr-1"></i>Cần lưu ý đặc biệt</span>
+                    </div>
+                    <div class="p-4 bg-amber-50 text-amber-600 rounded-2xl"><i class="fa-solid fa-clipboard-list text-2xl"></i></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-700 text-base">Cơ cấu Vật tư theo Hệ Thống Kỹ Thuật</h3>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md font-medium">Theo số lượng mã vật tư</span>
+                    </div>
+                    <div class="h-64 flex justify-center items-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-md flex flex-col justify-between">
+                    <div>
+                        <span class="bg-indigo-500/30 text-indigo-300 text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider">Hỗ Trợ Thiết Kế & Lên BOM</span>
+                        <h3 class="text-xl font-bold mt-3 mb-2">Quản Lý Danh Mục Gốc</h3>
+                        <p class="text-slate-300 text-xs leading-relaxed mb-4">Điền Số Lượng Cần cho các vật tư và tiến hành tạo Phiếu Yêu Cầu Vật Tư nhanh chóng.</p>
+                    </div>
+                    <div class="space-y-2">
+                        <button onclick="switchTab('danhmuc')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl transition duration-150 flex items-center justify-center space-x-2 text-sm shadow-sm">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>Lập phiếu / Cập nhật Danh mục</span>
+                        </button>
+                        <button onclick="openModal('add-vattu-modal')" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-2.5 px-4 rounded-xl transition duration-150 flex items-center justify-center space-x-2 text-sm shadow-sm">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>Bổ sung Vật tư mới</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-danhmuc" class="tab-content hidden space-y-6">
+            <div class="sticky top-16 z-40 bg-slate-50 pt-2 pb-2 space-y-4 -mt-2">
+                
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Cơ Sở Dữ Liệu & Khởi Tạo Yêu Cầu</h2>
+                        <p class="text-xs text-slate-400">Nhập số lượng ở cột "SL Cần" trên bảng để xuất Phiếu Yêu Cầu.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="exportCodeSource()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition duration-150 flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-code"></i> <span>Xuất Backup Code</span>
+                        </button>
+                        <button onclick="openExportModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition duration-150 flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-file-export"></i> <span>Xuất Phiếu BOM (Excel/PDF)</span>
+                        </button>
+                        <button onclick="resetAllSoLuongCan()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition duration-150 flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-arrow-rotate-left"></i> <span>Reset SL Cần & Ghi chú</span>
+                        </button>
+                        <button onclick="openModal('add-vattu-modal')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-sm font-medium shadow-sm transition duration-150 flex items-center justify-center space-x-1.5">
+                            <i class="fa-solid fa-plus"></i> <span>Thêm Mới</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="dm-search" oninput="filterDanhMuc()" placeholder="Tìm nhanh mã, tên, quy cách..." class="pl-10 w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm focus:border-blue-500 focus:bg-white focus:outline-none transition">
+                    </div>
+                    <div>
+                        <select id="dm-filter-hangmuc" onchange="filterDanhMuc()" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm focus:border-blue-500 focus:bg-white focus:outline-none transition">
+                            <option value="">-- Tất cả Gói thầu / Hệ thống --</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select id="dm-filter-hang" onchange="filterDanhMuc()" class="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 px-3 text-sm focus:border-blue-500 focus:bg-white focus:outline-none transition">
+                            <option value="">-- Tất cả Thương hiệu / NCC --</option>
+                        </select>
+                    </div>
+                </div>
+                
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-left text-sm">
+                        <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-3 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider w-12 text-center">STT</th>
+                                <th class="px-3 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[120px]">Hệ Thống / Gói Thầu</th>
+                                <th class="px-3 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider max-w-[200px]">Tên Vật Tư / Thiết Bị</th>
+                                <th class="px-3 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider max-w-[150px]">Quy Cách Kỹ Thuật</th>
+                                <th class="px-3 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider text-center">ĐVT</th>
+                                <th class="px-3 py-3.5 text-xs font-bold text-amber-600 uppercase tracking-wider w-24 bg-amber-50 text-center">SL Cần</th>
+                                <th class="px-3 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[150px]">Ghi chú</th>
+                                <th class="px-3 py-3.5 text-xs font-bold text-slate-500 uppercase tracking-wider w-24 text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="danhmuc-table-body" class="bg-white divide-y divide-slate-200"></tbody>
+                    </table>
+                </div>
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-slate-500 gap-2">
+                    <div>Đang hiển thị: <span id="dm-showing-count" class="font-semibold text-slate-700">0</span> / <span id="dm-total-count" class="font-semibold text-slate-700">0</span> mã vật tư</div>
+                    <div class="text-right sm:text-left"><i class="fa-solid fa-circle-info text-blue-500 mr-1.5"></i>Nhập số vào cột <b class="text-amber-600">SL CẦN</b> và bấm Xuất Phiếu BOM.</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="export-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center lg:p-6">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true" onclick="closeModal('export-modal')">
+                <div class="absolute inset-0 bg-slate-900 opacity-60"></div>
+            </div>
+            <span class="hidden lg:inline-block lg:align-middle lg:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all my-8 lg:align-middle max-w-6xl w-full">
+                <div class="bg-white px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="text-base font-bold text-slate-800"><i class="fa-solid fa-file-waveform mr-2 text-emerald-600"></i>Cấu Hình & Xem Trước Phiếu Yêu Cầu Vật Tư</h3>
+                    <button onclick="closeModal('export-modal')" class="text-slate-400 hover:text-slate-600 transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-h-[calc(100vh-160px)] overflow-y-auto">
+                    <div class="lg:col-span-5 space-y-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3.5">
+                            <span class="text-xs font-bold text-blue-700 tracking-wider uppercase block"><i class="fa-solid fa-circle-info mr-1"></i>Thông tin phiếu & Cấu hình Tên File</span>
+                            
+                            <div class="mb-3">
+                                <label class="block text-xs font-bold text-indigo-700 mb-1">Loại biểu mẫu cần xuất:</label>
+                                <select id="export-loaiphieu" onchange="updateExportPreview()" class="w-full rounded-lg border-2 border-indigo-200 py-1.5 px-3 text-sm focus:border-indigo-500 focus:outline-none bg-indigo-50 font-bold text-indigo-800 transition cursor-pointer">
+                                    <option value="PHIẾU YÊU CẦU CẤP VẬT TƯ">1. Phiếu Yêu Cầu Cấp Vật Tư</option>
+                                    <option value="PHIẾU YÊU CẦU NHẬP VẬT TƯ VỀ KHO">2. Phiếu Yêu Cầu Nhập Vật Tư Về Kho</option>
+                                    <option value="PHIẾU THỐNG KÊ SỐ LƯỢNG VẬT TƯ ĐÃ THI CÔNG">3. Phiếu Thống Kê Số Lượng Vật Tư Đã Thi CÔNG</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Tên dự án:</label>
+                                    <input type="text" id="export-tenduan" oninput="updateExportPreview()" placeholder="Ví dụ: Dự án Hòa Phát" class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Công suất (kWp):</label>
+                                        <input type="text" id="export-congsuat" oninput="updateExportPreview()" placeholder="Ví dụ: 2000" class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">Số hiệu REV:</label>
+                                        <input type="text" id="export-rev" oninput="updateExportPreview()" placeholder="Ví dụ: 00" class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Số phiếu:</label>
+                                    <input type="text" id="export-so" oninput="updateExportPreview()" placeholder="Ví dụ: 01/YC-VT" class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Ngày lập phiếu:</label>
+                                    <input type="date" id="export-ngay" onchange="updateExportPreview()" class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                </div>
+                            </div>
+                            <div id="wrap-lydo">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Lý do đề nghị:</label>
+                                <input type="text" id="export-lydo" oninput="updateExportPreview()" placeholder="Ví dụ: Cấp vật tư..." class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3.5">
+                            <span class="text-xs font-bold text-blue-700 tracking-wider uppercase block"><i class="fa-solid fa-signature mr-1"></i>Thành phần nhân sự ký duyệt</span>
+                            <div class="space-y-2.5">
+                                <div id="wrap-nguoilap">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Người yêu cầu:</label>
+                                    <input type="text" id="export-nguoilap" oninput="updateExportPreview()" placeholder="Họ và tên..." class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                </div>
+                                <div id="wrap-phutrach">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Người xét duyệt:</label>
+                                    <input type="text" id="export-phutrach" value="Trần Quang Tuyên" oninput="updateExportPreview()" placeholder="Họ và tên..." class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                </div>
+                                <div id="wrap-giamdoc">
+                                    <label class="block text-xs font-semibold text-slate-600 mb-1">Thủ kho:</label>
+                                    <input type="text" id="export-giamdoc" value="Trương Quốc Hưng" oninput="updateExportPreview()" placeholder="Họ và tên..." class="w-full rounded-lg border border-slate-200 py-1.5 px-3 text-sm focus:border-emerald-500 focus:outline-none bg-white transition">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                            <span class="text-xs font-bold text-slate-700 block tracking-wider uppercase">Lọc Hạng Mục Hệ Thống Cấp Phát:</span>
+                            <div class="max-h-36 overflow-y-auto border border-slate-200 rounded-lg p-2.5 bg-white space-y-2" id="export-categories-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7 flex flex-col">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block"><i class="fa-solid fa-eye mr-1.5"></i>Khung Nhìn Bản In Mô Phỏng (Landscape A4)</span>
+                        <div class="border border-slate-300 bg-slate-200 rounded-xl p-4 overflow-auto flex-grow max-h-[500px]">
+                            <div id="live-preview-pane" class="a4-preview-sheet p-6 mx-auto"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('export-modal')" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-100 text-sm font-medium transition">Hủy bỏ</button>
+                    <button type="button" onclick="executeExport('excel')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-medium transition shadow-sm flex items-center">
+                        <i class="fa-solid fa-file-excel mr-1.5"></i>Tải Xuất Excel
+                    </button>
+                    <button type="button" onclick="executeExport('pdf')" class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-medium transition shadow-sm flex items-center">
+                        <i class="fa-solid fa-file-pdf mr-1.5"></i>Tải Xuất PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-vattu-modal" class="fixed inset-0 z-50 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" aria-hidden="true" onclick="closeModal('add-vattu-modal')">
+                <div class="absolute inset-0 bg-slate-900 opacity-60"></div>
+            </div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div class="bg-white px-6 pt-6 pb-4 sm:pb-6">
+                    <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+                        <h3 class="text-base font-bold text-slate-800" id="vattu-modal-title"><i class="fa-solid fa-boxes-packing mr-2 text-indigo-600"></i>Thêm Mới Vật Tư</h3>
+                        <button onclick="closeModal('add-vattu-modal')" class="text-slate-400 hover:text-slate-600 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                    <form id="vattu-form" class="space-y-4 mt-4" onsubmit="handleNewVattu(event)">
+                        <input type="hidden" id="vt-edit-mode" value="CREATE">
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Mã định danh duy nhất</label>
+                            <input type="text" id="vt-ma" required placeholder="Ví dụ: HSE-SEAMLOCK-M8..." class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 focus:outline-none transition">
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Hệ thống / Gói thầu</label>
+                                <select id="vt-hangmuc-select" required onchange="toggleCustomCategoryInput()" class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 bg-slate-50">
+                                    <option value="Giàn giáo">Giàn giáo</option>
+                                    <option value="Công cụ dụng cụ">Công cụ dụng cụ</option>
+                                    <option value="CAZ">CAZ</option>
+                                    <option value="Bao che tôn sáng">Bao che tôn sáng</option>
+                                    <option value="Dây cứu sinh">Dây cứu sinh</option>
+                                    <option value="Khung giá đỡ nhôm">Khung giá đỡ nhôm</option>
+                                    <option value="Hệ thống Thang/máng cáp">Hệ thống Thang/máng cáp</option>
+                                    <option value="Lối đi bảo trì (walkway)">Lối đi bảo trì (walkway)</option>
+                                    <option value="Cáp điện DC & Đầu nối">Cáp điện DC & Đầu nối</option>
+                                    <option value="Cáp điện AC">Cáp điện AC</option>
+                                    <option value="Hệ thống rửa pin">Hệ thống rửa pin</option>
+                                    <option value="Trạm biến tần">Trạm biến tần</option>
+                                    <option value="Cảm biến môi trường">Cảm biến môi trường</option>
+                                    <option value="Hệ thống tiếp địa">Hệ thống tiếp địa</option>
+                                    <option value="Hệ thống chống sét">Hệ thống chống sét</option>
+                                    <option value="CUSTOM_NEW">-- Khác (Tạo hạng mục mới) --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Đơn vị tính (ĐVT)</label>
+                                <input type="text" id="vt-dvt" required placeholder="Tấm, Cây, Cuộn, Cái..." class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 transition">
+                            </div>
+                        </div>
+
+                        <div id="custom-hangmuc-wrapper" class="hidden animate-pulse">
+                            <label class="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Tên Hệ thống mới</label>
+                            <input type="text" id="vt-hangmuc-custom" placeholder="Nhập tên hạng mục tự tạo..." class="w-full rounded-xl border-2 border-amber-300 py-2 px-3 text-sm focus:border-blue-500 transition">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Tên Vật tư / Thiết bị</label>
+                                <input type="text" id="vt-ten" required placeholder="Sắt ống Hòa Phát..." class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Thương hiệu / NCC</label>
+                                <input type="text" id="vt-hang" required placeholder="Hòa Phát, Cadivi..." class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-indigo-700 uppercase tracking-wider mb-1">Quy cách kỹ thuật tiêu chuẩn</label>
+                            <input type="text" id="vt-quycach" required placeholder="Ví dụ: Ø49x6m..." class="w-full rounded-xl border-2 border-indigo-200 py-2 px-3 text-sm focus:border-blue-500 font-semibold text-slate-800">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">Số lượng cần xuất</label>
+                                <input type="number" id="vt-soluongcan" min="0" value="0" class="w-full rounded-xl border border-amber-300 bg-amber-50 py-2 px-3 text-sm focus:border-amber-500 transition font-bold text-amber-800">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Mức tồn cảnh báo</label>
+                                <input type="number" id="vt-safety" required value="10" class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">TG đặt hàng</label>
+                                <input type="text" id="vt-time" placeholder="3 ngày, 1 tuần..." class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 transition">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Ghi chú ứng dụng</label>
+                            <textarea id="vt-note" rows="2" placeholder="Sử dụng inox 304..." class="w-full rounded-xl border border-slate-200 py-2 px-3 text-sm focus:border-blue-500 transition"></textarea>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 flex justify-end space-x-2">
+                            <button type="button" onclick="closeModal('add-vattu-modal')" class="px-4 py-2 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 text-sm font-medium transition">Hủy</button>
+                            <button type="submit" id="btn-vattu-submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition shadow-sm">Lưu Dữ Liệu</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+       
+
+        // 1. Khai báo biến dạng let thay vì const để có thể gán dữ liệu từ file JSON
+        let default_dataset = []; 
+        let dataset_danhmuc = JSON.parse(localStorage.getItem('solar_epc_data'));
+
+        // Hàm autoSyncData giữ nguyên không cần thay đổi gì cả
+        function autoSyncData() {
+            if (!dataset_danhmuc || dataset_danhmuc.length === 0) {
+                dataset_danhmuc = JSON.parse(JSON.stringify(default_dataset));
+                saveToLocalStorage();
+            } else {
+                let isModified = false;
+
+                default_dataset.forEach(defaultItem => {
+                    const existingIndex = dataset_danhmuc.findIndex(item => item.id === defaultItem.id);
+                    
+                    if (existingIndex === -1) {
+                        dataset_danhmuc.push(JSON.parse(JSON.stringify(defaultItem)));
+                        isModified = true;
+                    } else {
+                        const preservedSlCan = dataset_danhmuc[existingIndex].soluongcan || 0;
+                        const preservedExportNote = dataset_danhmuc[existingIndex].exportNote || ""; 
+                        
+                        const expectedObj = Object.assign({}, defaultItem, { soluongcan: preservedSlCan, exportNote: preservedExportNote });
+                        if (JSON.stringify(dataset_danhmuc[existingIndex]) !== JSON.stringify(expectedObj)) {
+                            dataset_danhmuc[existingIndex] = expectedObj;
+                            isModified = true;
+                        }
+                    }
+                });
+
+                dataset_danhmuc.forEach(item => {
+                    if(item.exportNote === undefined) {
+                        item.exportNote = "";
+                        isModified = true;
+                    }
+                });
+
+                if (isModified) {
+                    saveToLocalStorage();
+                    console.log("Hệ thống đã tự động đồng bộ dữ liệu vật tư mới nhất từ mã nguồn.");
+                }
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('solar_epc_data', JSON.stringify(dataset_danhmuc));
+        }
+
+        // 2. Viết lại window.onload để gọi file JSON trước
+        window.onload = function() {
+            fetch('./data.json')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Mạng lỗi hoặc không tìm thấy file data.json');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    default_dataset = data; // Nạp 4000 thiết bị vào biến
+                    
+                    // Sau khi có dữ liệu mới bắt đầu khởi chạy các hàm chức năng
+                    autoSyncData();
+                    syncFiltersAndDropdowns();
+                    renderDanhMuc();
+                    updateDashboardMetrics();
+                    initCharts();
+                })
+                .catch(error => {
+                    console.error('Lỗi khi tải dữ liệu vật tư:', error);
+                    showToast('Lỗi: Không thể tải danh sách vật tư gốc!', 'error');
+                });
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow');
+                btn.classList.add('text-slate-600', 'hover:bg-slate-100', 'hover:text-blue-600');
+            });
+            document.getElementById('tab-' + tabId).classList.add('bg-blue-600', 'text-white', 'shadow');
+            document.getElementById('tab-' + tabId).classList.remove('text-slate-600', 'hover:bg-slate-100', 'hover:text-blue-600');
+
+            document.querySelectorAll('.tab-content').forEach(page => {
+                page.classList.add('hidden');
+                page.classList.remove('block');
+            });
+            document.getElementById('page-' + tabId).classList.remove('hidden');
+            document.getElementById('page-' + tabId).classList.add('block');
+
+            if (tabId === 'dashboard') {
+                initCharts();
+                updateDashboardMetrics();
+            }
+        }
+
+        function syncFiltersAndDropdowns() {
+            const categories = [...new Set(dataset_danhmuc.map(x => x.hangmuc))];
+            const brands = [...new Set(dataset_danhmuc.map(x => x.hang))];
+
+            const dmHmFilter = document.getElementById('dm-filter-hangmuc');
+            dmHmFilter.innerHTML = '<option value="">-- Tất cả Gói thầu / Hệ thống --</option>';
+            categories.forEach(cat => { dmHmFilter.appendChild(new Option(cat, cat)); });
+
+            const dmHgFilter = document.getElementById('dm-filter-hang');
+            dmHgFilter.innerHTML = '<option value="">-- Tất cả Thương hiệu / NCC --</option>';
+            brands.forEach(brd => { dmHgFilter.appendChild(new Option(brd, brd)); });
+        }
+
+        function toggleCustomCategoryInput() {
+            const selectEl = document.getElementById('vt-hangmuc-select');
+            const customWrapper = document.getElementById('custom-hangmuc-wrapper');
+            const customInput = document.getElementById('vt-hangmuc-custom');
+            if (selectEl.value === 'CUSTOM_NEW') {
+                customWrapper.classList.remove('hidden');
+                customInput.required = true;
+            } else {
+                customWrapper.classList.add('hidden');
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+
+        function updateSoLuongCan(id, value) {
+            const val = parseFloat(value) || 0;
+            const index = dataset_danhmuc.findIndex(x => x.id === id);
+            if(index !== -1) {
+                dataset_danhmuc[index].soluongcan = val;
+                saveToLocalStorage();
+            }
+        }
+
+        function updateExportNote(id, value) {
+            const index = dataset_danhmuc.findIndex(x => x.id === id);
+            if(index !== -1) {
+                dataset_danhmuc[index].exportNote = value;
+                saveToLocalStorage();
+            }
+        }
+
+        function resetAllSoLuongCan() {
+            if (confirm("Bạn có chắc chắn muốn đưa toàn bộ 'SL Cần' và 'Ghi chú' của tất cả vật tư về rỗng để làm phiếu mới?")) {
+                dataset_danhmuc.forEach(item => {
+                    item.soluongcan = 0;
+                    item.exportNote = ""; 
+                });
+                saveToLocalStorage();
+                renderDanhmuc();
+                showToast("Đã reset toàn bộ số lượng cần và ghi chú thành công!", "success");
+            }
+        }
+
+        function renderDanhMuc() {
+            const tableBody = document.getElementById('danhmuc-table-body');
+            tableBody.innerHTML = '';
+
+            // Lấy từ khóa và loại bỏ dấu để so sánh
+            const rawSearchTerm = document.getElementById('dm-search').value;
+            const searchTerm = removeVietnameseTones(rawSearchTerm);
+            
+            const filterHm = document.getElementById('dm-filter-hangmuc').value;
+            const filterHg = document.getElementById('dm-filter-hang').value;
+
+            let filtered = dataset_danhmuc.filter(item => {
+                // Loại bỏ dấu của các trường dữ liệu trước khi so sánh
+                const idNorm = removeVietnameseTones(item.id);
+                const tenNorm = removeVietnameseTones(item.ten);
+                const quycachNorm = removeVietnameseTones(item.quycach);
+                const hangmucNorm = removeVietnameseTones(item.hangmuc);
+
+                const matchesSearch = idNorm.includes(searchTerm) || 
+                                      tenNorm.includes(searchTerm) || 
+                                      quycachNorm.includes(searchTerm) || 
+                                      hangmucNorm.includes(searchTerm);
+                                      
+                const matchesHm = filterHm === '' || item.hangmuc === filterHm;
+                const matchesHg = filterHg === '' || item.hang === filterHg;
+                return matchesSearch && matchesHm && matchesHg;
+            });
+
+            filtered.forEach((item, index) => {
+                const slCan = item.soluongcan || 0;
+                const exportNote = item.exportNote || "";
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-slate-50 transition border-b border-slate-100';
+                row.innerHTML = `
+                    <td class="px-3 py-3.5 font-semibold text-slate-400 text-center">${index + 1}</td>
+                    <td class="px-3 py-3.5 font-semibold text-slate-500 text-xs">${item.hangmuc}</td>
+                    <td class="px-3 py-3.5 font-bold text-slate-800 break-words max-w-[200px]">${item.ten}</td>
+                    <td class="px-3 py-3.5 font-bold text-indigo-700 text-xs"><span class="bg-indigo-50 border border-indigo-100 px-2 py-1 rounded-lg inline-block break-words max-w-[160px]">${item.quycach}</span></td>
+                    <td class="px-3 py-3.5 text-slate-500 font-semibold text-xs text-center">${item.dvt}</td>
+                    <td class="px-3 py-3.5 bg-amber-50/30 text-center">
+                        <input type="number" min="0" value="${slCan}" onchange="updateSoLuongCan('${item.id}', this.value)" class="w-16 p-1 border border-amber-200 rounded-lg text-center text-sm font-bold text-amber-700 focus:border-amber-500 outline-none shadow-inner bg-white">
+                    </td>
+                    <td class="px-3 py-3.5">
+                        <input type="text" value="${exportNote}" placeholder="Ghi chú xuất..." onchange="updateExportNote('${item.id}', this.value)" class="note-input">
+                    </td>
+                    <td class="px-3 py-3.5">
+                        <div class="flex items-center justify-center space-x-2">
+                            <button onclick="editVattu('${item.id}')" title="Sửa vật tư" class="text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 p-1.5 rounded-lg text-sm font-semibold transition">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteVattu('${item.id}')" title="Xóa vật tư" class="text-rose-400 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 p-1.5 rounded-lg transition">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            document.getElementById('dm-showing-count').innerText = filtered.length;
+            document.getElementById('dm-total-count').innerText = dataset_danhmuc.length;
+        }
+
+        function filterDanhMuc() { renderDanhMuc(); }
+
+        function editVattu(id) {
+            const item = dataset_danhmuc.find(x => x.id === id);
+            if(!item) return;
+
+            openModal('add-vattu-modal');
+            document.getElementById('vattu-modal-title').innerHTML = `<i class="fa-solid fa-pen-to-square mr-2 text-indigo-600"></i>Cập nhật thông số: ${id}`;
+            document.getElementById('vt-edit-mode').value = "EDIT";
+            
+            const vtMaInput = document.getElementById('vt-ma');
+            vtMaInput.value = item.id;
+            vtMaInput.disabled = true;
+            vtMaInput.classList.add('bg-slate-100', 'text-slate-400');
+
+            const selectHm = document.getElementById('vt-hangmuc-select');
+            if ([...selectHm.options].some(opt => opt.value === item.hangmuc)) {
+                selectHm.value = item.hangmuc;
+                document.getElementById('custom-hangmuc-wrapper').classList.add('hidden');
+            } else {
+                selectHm.value = 'CUSTOM_NEW';
+                document.getElementById('custom-hangmuc-wrapper').classList.remove('hidden');
+                document.getElementById('vt-hangmuc-custom').value = item.hangmuc;
+            }
+
+            document.getElementById('vt-dvt').value = item.dvt;
+            document.getElementById('vt-ten').value = item.ten;
+            document.getElementById('vt-hang').value = item.hang;
+            document.getElementById('vt-quycach').value = item.quycach;
+            document.getElementById('vt-safety').value = item.safety || 10;
+            document.getElementById('vt-time').value = item.time || '';
+            document.getElementById('vt-soluongcan').value = item.soluongcan || 0;
+            document.getElementById('vt-note').value = item.note || '';
+
+            document.getElementById('btn-vattu-submit').innerText = "Cập nhật Quy cách";
+        }
+
+        function resetVattuFormToCreateMode() {
+            document.getElementById('vattu-modal-title').innerHTML = `<i class="fa-solid fa-boxes-packing mr-2 text-indigo-600"></i>Thêm Mới Vật Tư`;
+            document.getElementById('vt-edit-mode').value = "CREATE";
+            
+            const vtMaInput = document.getElementById('vt-ma');
+            vtMaInput.value = '';
+            vtMaInput.disabled = false;
+            vtMaInput.classList.remove('bg-slate-100', 'text-slate-400');
+
+            document.getElementById('vattu-form').reset();
+            document.getElementById('vt-soluongcan').value = 0;
+            document.getElementById('custom-hangmuc-wrapper').classList.add('hidden');
+            document.getElementById('btn-vattu-submit').innerText = "Lưu Dữ Liệu";
+        }
+
+        function handleNewVattu(event) {
+            event.preventDefault();
+            const editMode = document.getElementById('vt-edit-mode').value;
+            const id = document.getElementById('vt-ma').value.trim().toUpperCase();
+            
+            const selectHm = document.getElementById('vt-hangmuc-select').value;
+            const customHm = document.getElementById('vt-hangmuc-custom').value.trim();
+            const hangmuc = selectHm === 'CUSTOM_NEW' ? customHm : selectHm;
+
+            if(!hangmuc) return showToast("Vui lòng điền thông tin hệ thống kỹ thuật!", "warning");
+
+            const dvt = document.getElementById('vt-dvt').value.trim();
+            const ten = document.getElementById('vt-ten').value.trim();
+            const quycach = document.getElementById('vt-quycach').value.trim();
+            const hang = document.getElementById('vt-hang').value.trim();
+            const safety = parseInt(document.getElementById('vt-safety').value) || 10;
+            const time = document.getElementById('vt-time').value.trim();
+            const soluongcan = parseFloat(document.getElementById('vt-soluongcan').value) || 0;
+            const note = document.getElementById('vt-note').value.trim();
+            const exportNote = ""; 
+
+            if (editMode === "EDIT") {
+                const index = dataset_danhmuc.findIndex(x => x.id === id);
+                if (index !== -1) {
+                    const preservedExportNote = dataset_danhmuc[index].exportNote || "";
+                    dataset_danhmuc[index] = { id, hangmuc, ten, quycach, hang, dvt, safety, time, note, soluongcan, exportNote: preservedExportNote };
+                    saveToLocalStorage();
+                    showToast(`Đã điều chỉnh thông số vật tư ${id}!`, "success");
+                }
+            } else {
+                if (dataset_danhmuc.some(item => item.id === id)) {
+                    return showToast("Mã định danh này đã tồn tại!", "error");
+                }
+                dataset_danhmuc.push({ id, hangmuc, ten, quycach, hang, dvt, safety, time, note, soluongcan, exportNote });
+                saveToLocalStorage();
+                showToast(`Bổ sung thành công mã vật tư ${id}!`, "success");
+            }
+
+            closeModal('add-vattu-modal');
+            syncFiltersAndDropdowns();
+            renderDanhMuc();
+            updateDashboardMetrics();
+            initCharts();
+        }
+
+        function deleteVattu(id) {
+            if(confirm(`Bạn có chắc chắn xóa vĩnh viễn vật tư "${id}"?`)) {
+                dataset_danhmuc = dataset_danhmuc.filter(x => x.id !== id);
+                saveToLocalStorage();
+                syncFiltersAndDropdowns();
+                renderDanhMuc();
+                updateDashboardMetrics();
+                initCharts();
+                showToast(`Đã xóa vật tư "${id}"`, "info");
+            }
+        }
+
+        let categoryChartInstance = null;
+        function updateDashboardMetrics() {
+            document.getElementById('stat-total-items').innerText = dataset_danhmuc.length;
+            const categories = [...new Set(dataset_danhmuc.map(x => x.hangmuc))];
+            const brands = [...new Set(dataset_danhmuc.map(x => x.hang))];
+            const hasNotes = dataset_danhmuc.filter(x => x.note && x.note.trim() !== '').length;
+
+            document.getElementById('stat-total-categories').innerText = categories.length;
+            document.getElementById('stat-total-brands').innerText = brands.length;
+            document.getElementById('stat-has-notes').innerText = hasNotes;
+        }
+
+        function initCharts() {
+            const ctx = document.getElementById('categoryChart');
+            if(!ctx) return;
+            if(categoryChartInstance) categoryChartInstance.destroy();
+
+            const counts = {};
+            dataset_danhmuc.forEach(item => { counts[item.hangmuc] = (counts[item.hangmuc] || 0) + 1; });
+
+            categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: ['#4f46e5', '#3b82f6', '#0ea5e9', '#10b981', '#14b8a6', '#f59e0b', '#ef4444', '#a855f7', '#6366f1', '#06b6d4', '#ec4899', '#64748b'],
+                        borderWidth: 1
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 12, font: { size: 11 } } } } }
+            });
+        }
+
+        function exportCodeSource() {
+            const jsonString = JSON.stringify(dataset_danhmuc, null, 4);
+            const codeString = "const default_dataset = " + jsonString + ";";
+            const blob = new Blob([codeString], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.create
+Element('a');
+            a.href = url;
+            a.download = 'dulieu_backup.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Đã tải xuống file code Backup!", "success");
+        }
+
+        function openExportModal() {
+            const itemsWithQuantity = dataset_danhmuc.filter(item => item.soluongcan && parseFloat(item.soluongcan) > 0);
+            
+            if(itemsWithQuantity.length === 0) {
+                return showToast("Bạn chưa nhập số lượng cần xuất cho bất kỳ vật tư nào!", "warning");
+            }
+
+            document.getElementById('export-ngay').valueAsDate = new Date();
+            document.getElementById('export-so').value = "";
+            document.getElementById('export-lydo').value = "";
+            
+            document.getElementById('export-loaiphieu').value = "PHIẾU YÊU CẦU CẤP VẬT TƯ";
+
+            document.getElementById('export-tenduan').value = "Dự án Solar";
+            document.getElementById('export-congsuat').value = "xxxx";
+            document.getElementById('export-rev').value = "00";
+
+            document.getElementById('export-nguoilap').value = "";
+            document.getElementById('export-phutrach').value = "Trần Quang Tuyên";
+            document.getElementById('export-giamdoc').value = "Trương Quốc Hưng";
+
+            const categories = [...new Set(itemsWithQuantity.map(x => x.hangmuc))];
+            const container = document.getElementById('export-categories-container');
+            
+            let html = `
+                <label class="flex items-center space-x-2 mb-1.5 pb-1.5 border-b border-slate-200 cursor-pointer">
+                    <input type="checkbox" id="export-check-all" checked onchange="toggleAllExportCategories(this)" class="rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer">
+                    <span class="text-xs font-bold text-slate-800">Chọn tất cả</span>
+                </label>
+                <div class="space-y-1.5 pl-0.5">
+            `;
+
+            categories.forEach(cat => {
+                html += `
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" value="${cat}" checked onchange="updateExportPreview()" class="export-category-cb rounded text-emerald-600 focus:ring-emerald-500 w-4 h-4 cursor-pointer">
+                        <span class="text-xs font-medium text-slate-700">${cat}</span>
+                    </label>
+                `;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+
+            openModal('export-modal');
+            updateExportPreview();
+        }
+
+        function toggleAllExportCategories(source) {
+            const checkboxes = document.querySelectorAll('.export-category-cb');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateExportPreview();
+        }
+
+        function updateExportPreview() {
+            const checkboxes = document.querySelectorAll('.export-category-cb:checked');
+            const selectedCategories = Array.from(checkboxes).map(cb => cb.value);
+
+            const dataToExport = dataset_danhmuc.filter(item => 
+                item.soluongcan && parseFloat(item.soluongcan) > 0 && selectedCategories.includes(item.hangmuc)
+            );
+
+            const soPhieu = document.getElementById('export-so').value.trim() || ".......";
+            const lydo = document.getElementById('export-lydo').value.trim() || "....................................................................................";
+            const nguoiLap = document.getElementById('export-nguoilap').value.trim() || "";
+            const phuTrach = document.getElementById('export-phutrach').value.trim() || "";
+            const giamDoc = document.getElementById('export-giamdoc').value.trim() || "";
+            
+            const loaiPhieu = document.getElementById('export-loaiphieu').value;
+            
+            // Dynamic UI Toggles
+            document.getElementById('wrap-lydo').style.display = (loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") ? "block" : "none";
+            
+            if (loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                document.getElementById('wrap-nguoilap').style.display = "block";
+                document.getElementById('wrap-phutrach').style.display = "block";
+                document.getElementById('wrap-giamdoc').style.display = "block";
+            } else if (loaiPhieu === "PHIẾU YÊU CẦU NHẬP VẬT TƯ VỀ KHO") {
+                document.getElementById('wrap-nguoilap').style.display = "block";
+                document.getElementById('wrap-phutrach').style.display = "none";
+                document.getElementById('wrap-giamdoc').style.display = "block";
+            } else {
+                document.getElementById('wrap-nguoilap').style.display = "none";
+                document.getElementById('wrap-phutrach').style.display = "none";
+                document.getElementById('wrap-giamdoc').style.display = "none";
+            }
+
+            let colSlPreview = "SL YÊU CẦU";
+            if (loaiPhieu.includes("NHẬP")) colSlPreview = "SL NHẬP KHO";
+            else if (loaiPhieu.includes("THỐNG KÊ")) colSlPreview = "SL THI CÔNG";
+
+            const ngayInput = document.getElementById('export-ngay').value;
+            let ngayStr = "Ngày ... tháng ... năm .....";
+            if (ngayInput) {
+                const d = new Date(ngayInput);
+                ngayStr = `Ngày ${String(d.getDate()).padStart(2, '0')} tháng ${String(d.getMonth() + 1).padStart(2, '0')} năm ${d.getFullYear()}`;
+            }
+
+            const previewPane = document.getElementById('live-preview-pane');
+            
+            let tableRowsHtml = "";
+            if (dataToExport.length === 0) {
+                tableRowsHtml = `<tr><td colspan="7" style="border: 1px solid #000; padding: 10px; text-align: center; color: #888; font-style: italic;">Chưa chọn hạng mục nào để xuất dữ liệu...</td></tr>`;
+            } else {
+                dataToExport.forEach((item, idx) => {
+                    tableRowsHtml += `
+                        <tr class="avoid-page-break" style="page-break-inside: avoid;">
+                            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${idx + 1}</td>
+                            <td style="border: 1px solid #000; padding: 6px;">${item.hangmuc}</td>
+                            <td style="border: 1px solid #000; padding: 6px; font-weight: bold;">${item.ten}</td>
+                            <td style="border: 1px solid #000; padding: 6px;">${item.quycach}</td>
+                            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${item.dvt}</td>
+                            <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; color: #b45309;">${item.soluongcan}</td>
+                            <td style="border: 1px solid #000; padding: 6px;">${item.exportNote || ""}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const tenDuAn = document.getElementById('export-tenduan').value.trim() || "Dự án Solar";
+            
+            let lydoHtml = "";
+            if (loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                lydoHtml = `
+                <div style="font-size: 12px; font-weight: bold; margin-bottom: 12px; text-align: left;">
+                    Lý do đề nghị: <span style="font-weight: normal; font-style: italic; color: #374151;">${lydo}</span>
+                </div>`;
+            } else {
+                lydoHtml = `
+                <div style="font-size: 12px; font-weight: bold; margin-bottom: 12px; text-align: left;">
+                    Tên dự án: <span style="font-weight: normal; font-style: italic; color: #374151;">${tenDuAn}</span>
+                </div>`;
+            }
+
+            let signHtml = "";
+            if (loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                signHtml = `
+                    <div style="width: 30%;">
+                        <p style="margin: 0;">Người yêu cầu</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${nguoiLap}</p>
+                    </div>
+                    <div style="width: 30%;">
+                        <p style="margin: 0;">Người xét duyệt</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${phuTrach}</p>
+                    </div>
+                    <div style="width: 30%;">
+                        <p style="margin: 0;">Thủ kho</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${giamDoc}</p>
+                    </div>
+                `;
+            } else if (loaiPhieu === "PHIẾU YÊU CẦU NHẬP VẬT TƯ VỀ KHO") {
+                signHtml = `
+                    <div style="width: 40%;">
+                        <p style="margin: 0;">Người yêu cầu</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${nguoiLap}</p>
+                    </div>
+                    <div style="width: 40%;">
+                        <p style="margin: 0;">Thủ kho</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${giamDoc}</p>
+                    </div>
+                `;
+            } else if (loaiPhieu === "PHIẾU THỐNG KÊ SỐ LƯỢNG VẬT TƯ ĐÃ THI CÔNG") {
+                signHtml = `
+                    <div style="width: 100%; padding-right: 40px; text-align: right;">
+    <div style="display: inline-block; text-align: center;">
+        <p style="margin: 0;">Đại diện ban quản lý công trường</p>
+        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+        <p style="margin-top: 50px; font-size: 12px; font-weight: bold; min-height: 18px;">Chức vụ: ...............................</p>
+    </div>
+</div>
+                `;
+            }
+
+            previewPane.innerHTML = `
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px;">
+                    <div style="width: 25%;">
+                        <img src="./images/VAS.png" style="max-width: 120px; height: auto;" alt="VAS Logo" onerror="this.style.display='none'">
+                        <div style="font-size: 9px; color: #555; font-family: sans-serif; margin-top: 2px; display: none;" id="preview-logo-fallback">[ LOGO VAS ]</div>
+                    </div>
+                    <div style="width: 50%; text-align: center;">
+                        <h2 style="font-size: 18px; font-weight: bold; margin: 0 0 3px 0; letter-spacing: 0.5px;">${loaiPhieu}</h2>
+                        <div style="font-size: 12px; font-weight: bold; margin-bottom: 2px;">Số: <span style="color: #2563eb;">${soPhieu}</span></div>
+                        <div style="font-size: 12px; font-style: italic;">${ngayStr}</div>
+                    </div>
+                    <div style="width: 25%;"></div>
+                </div>
+
+                ${lydoHtml}
+
+                <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background-color: #f8fafc;">
+                            <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 4%;">STT</th>
+                            <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 14%;">HẠNG MỤC</th>
+                            <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 20%;">VẬT TƯ THIẾT BỊ</th>
+                            <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 18%;">QUY CÁCH KỸ THUẬT</th>
+                            <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 6%;">ĐVT</th>
+                            <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 10%;">${colSlPreview}</th>
+                            <th style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold; width: 28%;">GHI CHÚ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRowsHtml}
+                    </tbody>
+                </table>
+
+                <div class="avoid-page-break" style="page-break-inside: avoid;">
+                    <div style="display: flex; justify-content: space-between; margin-top: 25px; font-weight: bold; text-align: center; font-size: 12px;">
+                        ${signHtml}
+                    </div>
+
+                    ${loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ" ? `
+                    <div style="margin-top: 25px; font-size: 10px; text-align: left; font-weight: normal; font-style: italic; color: #666; border-top: 1px dashed #ddd; padding-top: 5px;">
+                        WH-P01-F06 (00-06/06/2024)
+                    </div>` : ""}
+                </div>
+            `;
+            
+            const previewImg = previewPane.querySelector('img');
+            if(previewImg) {
+                previewImg.onerror = function() {
+                    this.style.display = 'none';
+                    const fallback = document.getElementById('preview-logo-fallback');
+                    if(fallback) fallback.style.display = 'block';
+                };
+            }
+        }
+
+        async function executeExport(type) {
+            const checkboxes = document.querySelectorAll('.export-category-cb:checked');
+            const selectedCategories = Array.from(checkboxes).map(cb => cb.value);
+
+            if(selectedCategories.length === 0) {
+                return showToast("Vui lòng chọn ít nhất một hạng mục để xuất file!", "warning");
+            }
+
+            const dataToExport = dataset_danhmuc.filter(item => 
+                item.soluongcan && parseFloat(item.soluongcan) > 0 && selectedCategories.includes(item.hangmuc)
+            );
+
+            const soPhieu = document.getElementById('export-so').value.trim() || "...";
+            const lydo = document.getElementById('export-lydo').value.trim() || ".............................................";
+            const nguoiLap = document.getElementById('export-nguoilap').value.trim();
+            const phuTrach = document.getElementById('export-phutrach').value.trim();
+            const giamDoc = document.getElementById('export-giamdoc').value.trim();
+
+            const tenDuAn = document.getElementById('export-tenduan').value.trim() || "DuAnSolar";
+            const congSuat = document.getElementById('export-congsuat').value.trim() || "xxxx";
+            const rev = document.getElementById('export-rev').value.trim() || "00";
+            
+            const loaiPhieu = document.getElementById('export-loaiphieu').value;
+            let colSlExcel = "SỐ LƯỢNG YÊU CẦU";
+            let colSlPDF = "SỐ LƯỢNG<br>YÊU CẦU";
+            let prefixFile = "PHIEU_YEU_CAU_CAP";
+
+            if (loaiPhieu.includes("NHẬP")) {
+                colSlExcel = "SỐ LƯỢNG NHẬP KHO";
+                colSlPDF = "SỐ LƯỢNG<br>NHẬP KHO";
+                prefixFile = "PHIEU_NHAP_KHO";
+            } else if (loaiPhieu.includes("THỐNG KÊ")) {
+                colSlExcel = "SỐ LƯỢNG THI CÔNG";
+                colSlPDF = "SỐ LƯỢNG<br>THI CÔNG";
+                prefixFile = "PHIEU_THONG_KE_THI_CONG";
+            }
+
+            let hangMucFile = "Tổng hợp";
+            if (selectedCategories.length === 1) {
+                hangMucFile = selectedCategories[0];
+            }
+
+            const ngayInput = document.getElementById('export-ngay').value;
+            let ngayStr = "Ngày ... tháng ... năm .....";
+            let ngayFileStr = "00-00-0000";
+            if (ngayInput) {
+                const d = new Date(ngayInput);
+                ngayStr = `Ngày ${String(d.getDate()).padStart(2, '0')} tháng ${String(d.getMonth() + 1).padStart(2, '0')} năm ${d.getFullYear()}`;
+                ngayFileStr = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+            }
+
+            const finalFileName = `${tenDuAn}_${congSuat}kWp_${prefixFile}_${hangMucFile}_${ngayFileStr}_REV${rev}`;
+
+            const metaData = { soPhieu, ngayStr, lydo, nguoiLap, phuTrach, giamDoc, fileName: finalFileName, loaiPhieu, colSlExcel, colSlPDF, tenDuAn };
+
+            if (type === 'excel') {
+                await generateExcel(dataToExport, metaData);
+            } else if (type === 'pdf') {
+                generatePDF(dataToExport, metaData);
+            }
+            
+            closeModal('export-modal');
+        }
+
+        async function generateExcel(data, meta) {
+            showToast("Đang xử lý Form Excel chuẩn hóa...", "info");
+
+            const workbook = new ExcelJS.Workbook();
+            
+            const sheet = workbook.addWorksheet('Phieu_Yeu_Cau', {
+                pageSetup: {
+                    paperSize: 9, 
+                    orientation: 'landscape', 
+                    fitToPage: true, 
+                    fitToWidth: 1, 
+                    fitToHeight: 999, 
+                    horizontalCentered: true, 
+                    margins: { 
+                        left: 0.25, right: 0.25,
+                        top: 0.5, bottom: 0.5,
+                        header: 0.3, footer: 0.3
+                    }
+                }
+            });
+
+            sheet.columns = [
+                { width: 5 },  // A: STT
+                { width: 18 }, // B: HẠNG MỤC
+                { width: 22 }, // C: VẬT TƯ THIẾT BỊ
+                { width: 20 }, // D: QUY CÁCH KỸ THUẬT
+                { width: 8 },  // E: ĐVT
+                { width: 12 }, // F: SL YÊU CẦU
+                { width: 35 }  // G: GHI CHÚ
+            ];
+
+            try {
+                const response = await fetch('./images/VAS.png');
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const base64 = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result);
+                        reader.readAsDataURL(blob);
+                    });
+                    
+                    const logoId = workbook.addImage({ base64: base64, extension: 'png' });
+                    sheet.addImage(logoId, {
+                        tl: { col: 0.1, row: 0.1 }, br: { col: 1.9, row: 2.9 }, editAs: 'oneCell' 
+                    });
+                }
+            } catch (error) { console.log("Cảnh báo: Không thể nạp logo vào Excel.", error); }
+
+            sheet.mergeCells('C1:E1'); sheet.mergeCells('C2:E2'); sheet.mergeCells('C3:E3');
+
+            const titleCell = sheet.getCell('C1');
+            titleCell.value = meta.loaiPhieu;
+            titleCell.font = { name: 'Times New Roman', size: 16, bold: true };
+            titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+            const soCell = sheet.getCell('C2');
+            soCell.value = `Số: ${meta.soPhieu}`;
+            soCell.font = { name: 'Times New Roman', size: 12, bold: true };
+            soCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+            const ngayCell = sheet.getCell('C3');
+            ngayCell.value = meta.ngayStr;
+            ngayCell.font = { name: 'Times New Roman', size: 12, bold: true };
+            ngayCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+            let currentRow = 5;
+
+            sheet.mergeCells(`A${currentRow}:G${currentRow}`);
+            const lydoCell = sheet.getCell(`A${currentRow}`);
+            
+            // --- ĐIỀU KIỆN IN TÊN DỰ ÁN CHO EXCEL ---
+            if (meta.loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                lydoCell.value = `Lý do đề nghị: ${meta.lydo}`;
+            } else {
+                lydoCell.value = `Tên dự án: ${meta.tenDuAn}`;
+            }
+            
+            lydoCell.font = { name: 'Times New Roman', size: 12, bold: true };
+            lydoCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+            sheet.getRow(currentRow).height = 25; 
+            currentRow += 2;
+            
+
+            const headerRow = sheet.getRow(currentRow);
+            headerRow.values = ["STT", "HẠNG MỤC", "VẬT TƯ THIẾT BỊ", "QUY CÁCH KỸ THUẬT", "ĐVT", meta.colSlExcel, "GHI CHÚ"];
+            headerRow.font = { name: 'Times New Roman', size: 11, bold: true };
+            
+            ['A','B','C','D','E','F','G'].forEach(col => {
+                const cell = sheet.getCell(`${col}${currentRow}`);
+                cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+            });
+
+            currentRow++;
+            data.forEach((item, index) => {
+                const row = sheet.getRow(currentRow);
+                row.values = [index + 1, item.hangmuc, item.ten, item.quycach, item.dvt, parseFloat(item.soluongcan), item.exportNote || ""];
+                row.font = { name: 'Times New Roman', size: 11 };
+                
+                ['A','B','C','D','E','F','G'].forEach(col => {
+                    const cell = sheet.getCell(`${col}${currentRow}`);
+                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
+                    cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }; 
+                });
+
+                sheet.getCell(`A${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                sheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                sheet.getCell(`F${currentRow}`).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+                
+                currentRow++;
+            });
+
+            currentRow += 2; 
+
+            if (meta.loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+                sheet.mergeCells(`C${currentRow}:E${currentRow}`);
+                sheet.mergeCells(`F${currentRow}:G${currentRow}`);
+                
+                sheet.getCell(`A${currentRow}`).value = "Người yêu cầu";
+                sheet.getCell(`C${currentRow}`).value = "Người xét duyệt";
+                sheet.getCell(`F${currentRow}`).value = "Thủ kho";
+                
+                ['A', 'C', 'F'].forEach(col => {
+                    const cell = sheet.getCell(`${col}${currentRow}`);
+                    cell.font = { name: 'Times New Roman', size: 12, bold: true };
+                    cell.alignment = { horizontal: 'center' };
+                });
+
+                currentRow++;
+                sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+                sheet.mergeCells(`C${currentRow}:E${currentRow}`);
+                sheet.mergeCells(`F${currentRow}:G${currentRow}`);
+
+                sheet.getCell(`A${currentRow}`).value = "(Ký, ghi rõ họ tên)";
+                sheet.getCell(`C${currentRow}`).value = "(Ký, ghi rõ họ tên)";
+                sheet.getCell(`F${currentRow}`).value = "(Ký, ghi rõ họ tên)";
+
+                ['A', 'C', 'F'].forEach(col => {
+                    const cell = sheet.getCell(`${col}${currentRow}`);
+                    cell.font = { name: 'Times New Roman', size: 11, italic: true };
+                    cell.alignment = { horizontal: 'center' };
+                });
+
+                currentRow += 4;
+                sheet.mergeCells(`A${currentRow}:B${currentRow}`);
+                sheet.mergeCells(`C${currentRow}:E${currentRow}`);
+                sheet.mergeCells(`F${currentRow}:G${currentRow}`);
+
+                sheet.getCell(`A${currentRow}`).value = meta.nguoiLap;
+                sheet.getCell(`C${currentRow}`).value = meta.phuTrach;
+                sheet.getCell(`F${currentRow}`).value = meta.giamDoc;
+
+                ['A', 'C', 'F'].forEach(col => {
+                    const cell = sheet.getCell(`${col}${currentRow}`);
+                    cell.font = { name: 'Times New Roman', size: 12, bold: true };
+                    cell.alignment = { horizontal: 'center' };
+                });
+
+            } else if (meta.loaiPhieu === "PHIẾU YÊU CẦU NHẬP VẬT TƯ VỀ KHO") {
+                sheet.mergeCells(`B${currentRow}:C${currentRow}`);
+                sheet.mergeCells(`E${currentRow}:F${currentRow}`);
+                
+                sheet.getCell(`B${currentRow}`).value = "Người yêu cầu";
+                sheet.getCell(`E${currentRow}`).value = "Thủ kho";
+                
+                ['B', 'E'].forEach(col => {
+                    const cell = sheet.getCell(`${col}${currentRow}`);
+                    cell.font = { name: 'Times New Roman', size: 12, bold: true };
+                    cell.alignment = { horizontal: 'center' };
+                });
+
+                currentRow++;
+                sheet.mergeCells(`B${currentRow}:C${currentRow}`);
+                sheet.mergeCells(`E${currentRow}:F${currentRow}`);
+
+                sheet.getCell(`B${currentRow}`).value = "(Ký, ghi rõ họ tên)";
+                sheet.getCell(`E${currentRow}`).value = "(Ký, ghi rõ họ tên)";
+
+                ['B', 'E'].forEach(col => {
+                    const cell = sheet.getCell(`${col}${currentRow}`);
+                    cell.font = { name: 'Times New Roman', size: 11, italic: true };
+                    cell.alignment = { horizontal: 'center' };
+                });
+
+                currentRow += 4;
+                sheet.mergeCells(`B${currentRow}:C${currentRow}`);
+                sheet.mergeCells(`E${currentRow}:F${currentRow}`);
+
+                sheet.getCell(`B${currentRow}`).value = meta.nguoiLap;
+                sheet.getCell(`E${currentRow}`).value = meta.giamDoc;
+
+                ['B', 'E'].forEach(col => {
+                    const cell = sheet.getCell(`${col}${currentRow}`);
+                    cell.font = { name: 'Times New Roman', size: 12, bold: true };
+                    cell.alignment = { horizontal: 'center' };
+                });
+
+            } else if (meta.loaiPhieu === "PHIẾU THỐNG KÊ SỐ LƯỢNG VẬT TƯ ĐÃ THI CÔNG") {
+                sheet.mergeCells(`E${currentRow}:G${currentRow}`);
+                sheet.getCell(`E${currentRow}`).value = "Đại diện ban quản lý công trường";
+                sheet.getCell(`E${currentRow}`).font = { name: 'Times New Roman', size: 12, bold: true };
+                sheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
+
+                currentRow++;
+                sheet.mergeCells(`E${currentRow}:G${currentRow}`);
+                sheet.getCell(`E${currentRow}`).value = "(Ký, ghi rõ họ tên)";
+                sheet.getCell(`E${currentRow}`).font = { name: 'Times New Roman', size: 11, italic: true };
+                sheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
+
+                currentRow += 5; 
+                sheet.mergeCells(`E${currentRow}:G${currentRow}`);
+                sheet.getCell(`E${currentRow}`).value = "Chức vụ: ..........................................";
+                sheet.getCell(`E${currentRow}`).font = { name: 'Times New Roman', size: 12, bold: false };
+                sheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
+            }
+
+            // --- ĐIỀU KIỆN ẨN MÃ FORM CHO EXCEL ---
+            if (meta.loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                currentRow += 2;
+                sheet.mergeCells(`A${currentRow}:C${currentRow}`);
+                const footerCell = sheet.getCell(`A${currentRow}`);
+                footerCell.value = "WH-P01-F06 (00-06/06/2024)";
+                footerCell.font = { name: 'Times New Roman', size: 10, italic: true };
+            }
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `${meta.fileName}.xlsx`);
+            
+            showToast("Đã tải xuống file Excel chuẩn in A4!", "success");
+        }
+
+        function generatePDF(data, meta) {
+            showToast("Đang tạo tệp PDF, biểu mẫu chuẩn, vui lòng chờ...", "info");
+
+            let lydoHtml = "";
+            if (meta.loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                lydoHtml = `
+                <div style="font-size: 12px; font-weight: bold; margin-bottom: 12px; text-align: left;">
+                    Lý do đề nghị: <span style="font-weight: normal; font-style: italic; color: #374151;">${meta.lydo}</span>
+                </div>`;
+            } else {
+                lydoHtml = `
+                <div style="font-size: 12px; font-weight: bold; margin-bottom: 12px; text-align: left;">
+                    Tên dự án: <span style="font-weight: normal; font-style: italic; color: #374151;">${meta.tenDuAn}</span>
+                </div>`;
+            }
+
+            let signHtml = "";
+            if (meta.loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ") {
+                signHtml = `
+                    <div style="width: 30%;">
+                        <p style="margin: 0;">Người yêu cầu</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${meta.nguoiLap}</p>
+                    </div>
+                    <div style="width: 30%;">
+                        <p style="margin: 0;">Người xét duyệt</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${meta.phuTrach}</p>
+                    </div>
+                    <div style="width: 30%;">
+                        <p style="margin: 0;">Thủ kho</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${meta.giamDoc}</p>
+                    </div>
+                `;
+            } else if (meta.loaiPhieu === "PHIẾU YÊU CẦU NHẬP VẬT TƯ VỀ KHO") {
+                signHtml = `
+                    <div style="width: 40%;">
+                        <p style="margin: 0;">Người yêu cầu</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${meta.nguoiLap}</p>
+                    </div>
+                    <div style="width: 40%;">
+                        <p style="margin: 0;">Thủ kho</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; color: #1e3a8a; font-weight: bold; min-height: 18px;">${meta.giamDoc}</p>
+                    </div>
+                `;
+            } else if (meta.loaiPhieu === "PHIẾU THỐNG KÊ SỐ LƯỢNG VẬT TƯ ĐÃ THI CÔNG") {
+                signHtml = `
+                    <div style="width: 100%; text-align: right; padding-right: 40px;">
+                        <p style="margin: 0;">Đại diện ban quản lý công trường</p>
+                        <p style="font-weight: normal; font-style: italic; font-size: 10px; margin: 2px 0 0 0;">(Ký, ghi rõ họ tên)</p>
+                        <p style="margin-top: 50px; font-size: 12px; font-weight: normal; min-height: 18px;">Chức vụ: ..........................................</p>
+                    </div>
+                `;
+            }
+
+            const printDiv = document.createElement('div');
+            printDiv.innerHTML = `
+                <div style="padding: 20px 30px; font-family: 'Times New Roman', serif; color: #000; background: #fff;">
+                    <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 15px;">
+                        <div style="width: 25%;">
+                            <img src="./images/VAS.png" style="max-width: 140px; height: auto;" alt="VAS Logo" onerror="this.style.display='none'">
+                        </div>
+                        <div style="width: 50%; text-align: center;">
+                            <h2 style="font-size: 20px; font-weight: bold; margin: 0 0 5px 0;">${meta.loaiPhieu}</h2>
+                            <h2 style="font-size: 14px; font-weight: bold; margin: 0 0 5px 0;">Số: ${meta.soPhieu}</h2>
+                            <h2 style="font-size: 14px; font-weight: bold; margin: 0;">${meta.ngayStr}</h2>
+                        </div>
+                        <div style="width: 25%;"></div>
+                    </div>
+
+                    ${lydoHtml}
+                    
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 30px;">
+                        <thead>
+                            <tr>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 4%;">STT</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 14%;">HẠNG MỤC</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 20%;">VẬT TƯ THIẾT BỊ</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 18%;">QUY CÁCH KỸ THUẬT</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 6%;">ĐVT</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 10%;">${meta.colSlPDF}</th>
+                                <th style="border: 1px solid #000; padding: 8px; text-align: center; width: 28%;">GHI CHÚ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.map((item, idx) => `
+                                <tr class="avoid-page-break" style="page-break-inside: avoid;">
+                                    <td style="border: 1px solid #000; padding: 8px; text-align: center;">${idx + 1}</td>
+                                    <td style="border: 1px solid #000; padding: 8px;">${item.hangmuc}</td>
+                                    <td style="border: 1px solid #000; padding: 8px; font-weight: bold;">${item.ten}</td>
+                                    <td style="border: 1px solid #000; padding: 8px;">${item.quycach}</td>
+                                    <td style="border: 1px solid #000; padding: 8px; text-align: center;">${item.dvt}</td>
+                                    <td style="border: 1px solid #000; padding: 8px; text-align: center; font-weight: bold;">${item.soluongcan}</td>
+                                    <td style="border: 1px solid #000; padding: 8px;">${item.exportNote || ""}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div class="avoid-page-break" style="page-break-inside: avoid;">
+                        <div style="display: flex; justify-content: space-between; margin-top: 40px; font-weight: bold; text-align: center; font-size: 14px;">
+                            ${signHtml}
+                        </div>
+
+                        ${meta.loaiPhieu === "PHIẾU YÊU CẦU CẤP VẬT TƯ" ? `
+                        <div style="margin-top: 30px; font-size: 12px; text-align: left;font-weight: normal; font-style: italic">
+                            <p>WH-P01-F06 (00-06/06/2024)</p>
+                        </div>` : ""}
+                    </div>
+                </div>
+            `;
+            
+            const opt = {
+                margin:       0.3,
+                filename:     `${meta.fileName}.pdf`,
+                image:        { type: 'jpeg', quality: 1 },
+                html2canvas:  { scale: 2, useCORS: true }, 
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'landscape' },
+                pagebreak:    { mode: 'css', avoid: ['.avoid-page-break'] }
+            };
+
+            html2pdf().set(opt).from(printDiv).save().then(() => {
+                showToast("Đã tải xuống file PDF thành công!", "success");
+            });
+        }
+
+        // ==========================================
+        // HELPERS
+        // ==========================================
+        
+        // Thêm hàm loại bỏ dấu tiếng Việt
+        function removeVietnameseTones(str) {
+            if (!str) return "";
+            str = str.toLowerCase();
+            str = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            str = str.replace(/đ/g, 'd');
+            return str;
+        }
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let icon = '<i class="fa-solid fa-circle-info"></i>', bgClass = "bg-slate-900 text-white";
+
+            if (type === "success") { icon = '<i class="fa-solid fa-circle-check"></i>'; bgClass = "bg-emerald-600 text-white"; }
+            else if (type === "warning") { icon = '<i class="fa-solid fa-triangle-exclamation"></i>'; bgClass = "bg-amber-500 text-slate-950"; }
+            else if (type === "error") { icon = '<i class="fa-solid fa-circle-xmark"></i>'; bgClass = "bg-rose-600 text-white"; }
+
+            toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-lg flex items-center space-x-2 text-sm font-medium transition duration-300 opacity-0 transform translate-y-2`;
+            toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if(id === 'add-vattu-modal' && document.getElementById('vt-edit-mode').value !== "EDIT") resetVattuFormToCreateMode();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            if(id === 'add-vattu-modal') resetVattuFormToCreateMode();
+        }
+    </script>
+</body>
+</html>
